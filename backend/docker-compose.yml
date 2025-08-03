@@ -25,9 +25,8 @@ services:
 
   # WAHA WhatsApp API
   waha:
-    image: devlikeapro/waha:arm
+    image: devlikeapro/waha
     container_name: whatsapp_waha
-    platform: linux/arm64/v8
     ports:
       - '3001:3000'
     environment:
