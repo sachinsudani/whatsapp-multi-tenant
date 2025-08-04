@@ -14,6 +14,7 @@ import MessagesPage from "./pages/MessagesPage";
 import ContactsPage from "./pages/ContactsPage";
 import GroupsPage from "./pages/GroupsPage";
 import UsersPage from "./pages/UsersPage";
+import ApiTestPage from "./pages/ApiTest";
 import Layout from "./components/Layout";
 import LoadingSpinner from "./components/LoadingSpinner";
 
@@ -103,6 +104,7 @@ function AppRoutes() {
           <Route path="contacts" element={<ContactsPage />} />
           <Route path="groups" element={<GroupsPage />} />
           <Route path="users" element={<UsersPage />} />
+          <Route path="api-test" element={<ApiTestPage />} />
         </Route>
 
         {/* Catch all route */}

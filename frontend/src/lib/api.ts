@@ -5,7 +5,7 @@ import type {
   LoginRequest,
   RegisterRequest,
   RefreshTokenRequest,
-} from "../../../shared/types/auth";
+} from "../types/auth";
 import type {
   WhatsAppDevice,
   Message,
@@ -14,7 +14,24 @@ import type {
   SendMessageRequest,
   CreateDeviceRequest,
   UpdateDeviceRequest,
-} from "../../../shared/types/whatsapp";
+  DeviceQRResponse,
+  DeviceStatusResponse,
+  CreateContactRequest,
+  UpdateContactRequest,
+  CreateGroupRequest,
+  UpdateGroupRequest,
+} from "../types/whatsapp";
+
+// Error handling utility
+const handleApiError = (error: any) => {
+  if (error.response?.data?.message) {
+    throw new Error(error.response.data.message);
+  }
+  if (error.message) {
+    throw new Error(error.message);
+  }
+  throw new Error('An unexpected error occurred');
+};
 
 // API base configuration
 const API_BASE_URL =
@@ -26,6 +43,7 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 30000, // 30 seconds timeout
 });
 
 // Request interceptor to add auth token
@@ -79,122 +97,345 @@ apiClient.interceptors.response.use(
 
 // Auth API
 export const authAPI = {
-  login: (data: LoginRequest): Promise<AuthResponse> =>
-    apiClient.post("/auth/login", data).then((res) => res.data),
+  login: async (data: LoginRequest): Promise<AuthResponse> => {
+    try {
+      const response = await apiClient.post("/auth/login", data);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  register: (data: RegisterRequest): Promise<AuthResponse> =>
-    apiClient.post("/auth/register", data).then((res) => res.data),
+  register: async (data: RegisterRequest): Promise<AuthResponse> => {
+    try {
+      const response = await apiClient.post("/auth/register", data);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  refresh: (data: RefreshTokenRequest): Promise<AuthResponse> =>
-    apiClient.post("/auth/refresh", data).then((res) => res.data),
+  refresh: async (data: RefreshTokenRequest): Promise<AuthResponse> => {
+    try {
+      const response = await apiClient.post("/auth/refresh", data);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  logout: (): Promise<void> =>
-    apiClient.post("/auth/logout").then((res) => res.data),
+  logout: async (): Promise<void> => {
+    try {
+      await apiClient.post("/auth/logout");
+    } catch (error) {
+      // Don't throw error for logout, just log it
+      console.warn("Logout API call failed:", error);
+    }
+  },
+
+  getProfile: async (): Promise<any> => {
+    try {
+      const response = await apiClient.get("/auth/profile");
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 };
 
 // WhatsApp API
 export const whatsappAPI = {
   // Devices
-  getDevices: (): Promise<WhatsAppDevice[]> =>
-    apiClient.get("/whatsapp/devices").then((res) => res.data),
+  getDevices: async (): Promise<WhatsAppDevice[]> => {
+    try {
+      const response = await apiClient.get("/whatsapp/devices");
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  getDevice: (id: string): Promise<WhatsAppDevice> =>
-    apiClient.get(`/whatsapp/devices/${id}`).then((res) => res.data),
+  getDevice: async (id: string): Promise<WhatsAppDevice> => {
+    try {
+      const response = await apiClient.get(`/whatsapp/devices/${id}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  createDevice: (data: CreateDeviceRequest): Promise<WhatsAppDevice> =>
-    apiClient.post("/whatsapp/devices", data).then((res) => res.data),
+  createDevice: async (data: CreateDeviceRequest): Promise<WhatsAppDevice> => {
+    try {
+      const response = await apiClient.post("/whatsapp/devices", data);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  updateDevice: (
+  updateDevice: async (
     id: string,
     data: UpdateDeviceRequest
-  ): Promise<WhatsAppDevice> =>
-    apiClient.put(`/whatsapp/devices/${id}`, data).then((res) => res.data),
+  ): Promise<WhatsAppDevice> => {
+    try {
+      const response = await apiClient.put(`/whatsapp/devices/${id}`, data);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  deleteDevice: (id: string): Promise<{ message: string }> =>
-    apiClient.delete(`/whatsapp/devices/${id}`).then((res) => res.data),
+  deleteDevice: async (id: string): Promise<{ message: string }> => {
+    try {
+      const response = await apiClient.delete(`/whatsapp/devices/${id}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  generateQR: (id: string): Promise<{ qrCode: string; expiresAt: Date }> =>
-    apiClient.post(`/whatsapp/devices/${id}/qr`).then((res) => res.data),
+  generateQR: async (id: string): Promise<DeviceQRResponse> => {
+    try {
+      const response = await apiClient.post(`/whatsapp/devices/${id}/qr`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  getDeviceStatus: (id: string): Promise<{ status: string; info?: any }> =>
-    apiClient.get(`/whatsapp/devices/${id}/status`).then((res) => res.data),
+  getDeviceStatus: async (id: string): Promise<DeviceStatusResponse> => {
+    try {
+      const response = await apiClient.get(`/whatsapp/devices/${id}/status`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
   // Messages
-  sendMessage: (data: SendMessageRequest): Promise<Message> =>
-    apiClient.post("/whatsapp/send", data).then((res) => res.data),
+  sendMessage: async (data: SendMessageRequest): Promise<Message> => {
+    try {
+      const response = await apiClient.post("/whatsapp/send", data);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  getMessages: (
+  getMessages: async (
     params?: any
   ): Promise<{
     messages: Message[];
     total: number;
     page: number;
     limit: number;
-  }> => apiClient.get("/messages", { params }).then((res) => res.data),
+  }> => {
+    try {
+      const response = await apiClient.get("/messages", { params });
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  getMessage: (id: string): Promise<Message> =>
-    apiClient.get(`/messages/${id}`).then((res) => res.data),
+  getMessage: async (id: string): Promise<Message> => {
+    try {
+      const response = await apiClient.get(`/messages/${id}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  getMessageStats: (params?: any): Promise<any> =>
-    apiClient.get("/messages/stats", { params }).then((res) => res.data),
+  getMessageStats: async (params?: any): Promise<any> => {
+    try {
+      const response = await apiClient.get("/messages/stats", { params });
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  updateMessageStatus: (id: string, status: string): Promise<Message> =>
-    apiClient.put(`/messages/${id}/status`, { status }).then((res) => res.data),
+  updateMessageStatus: async (id: string, status: string): Promise<Message> => {
+    try {
+      const response = await apiClient.put(`/messages/${id}/status`, { status });
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  deleteMessage: (id: string): Promise<{ message: string }> =>
-    apiClient.delete(`/messages/${id}`).then((res) => res.data),
+  deleteMessage: async (id: string): Promise<{ message: string }> => {
+    try {
+      const response = await apiClient.delete(`/messages/${id}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 };
 
 // Contacts API
 export const contactsAPI = {
-  getContacts: (): Promise<Contact[]> =>
-    apiClient.get("/contacts").then((res) => res.data),
+  getContacts: async (): Promise<Contact[]> => {
+    try {
+      const response = await apiClient.get("/contacts");
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  getContact: (id: string): Promise<Contact> =>
-    apiClient.get(`/contacts/${id}`).then((res) => res.data),
+  getContact: async (id: string): Promise<Contact> => {
+    try {
+      const response = await apiClient.get(`/contacts/${id}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  createContact: (data: any): Promise<Contact> =>
-    apiClient.post("/contacts", data).then((res) => res.data),
+  createContact: async (data: CreateContactRequest): Promise<Contact> => {
+    try {
+      const response = await apiClient.post("/contacts", data);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  updateContact: (id: string, data: any): Promise<Contact> =>
-    apiClient.put(`/contacts/${id}`, data).then((res) => res.data),
+  updateContact: async (id: string, data: UpdateContactRequest): Promise<Contact> => {
+    try {
+      const response = await apiClient.put(`/contacts/${id}`, data);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  deleteContact: (id: string): Promise<{ message: string }> =>
-    apiClient.delete(`/contacts/${id}`).then((res) => res.data),
+  deleteContact: async (id: string): Promise<{ message: string }> => {
+    try {
+      const response = await apiClient.delete(`/contacts/${id}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  getContactStats: (id: string): Promise<any> =>
-    apiClient.get(`/contacts/${id}/stats`).then((res) => res.data),
+  getContactStats: async (id: string): Promise<any> => {
+    try {
+      const response = await apiClient.get(`/contacts/${id}/stats`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 };
 
 // Groups API
 export const groupsAPI = {
-  getGroups: (): Promise<ChatGroup[]> =>
-    apiClient.get("/groups").then((res) => res.data),
+  getGroups: async (): Promise<ChatGroup[]> => {
+    try {
+      const response = await apiClient.get("/groups");
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  getGroup: (id: string): Promise<ChatGroup> =>
-    apiClient.get(`/groups/${id}`).then((res) => res.data),
+  getGroup: async (id: string): Promise<ChatGroup> => {
+    try {
+      const response = await apiClient.get(`/groups/${id}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  createGroup: (data: any): Promise<ChatGroup> =>
-    apiClient.post("/groups", data).then((res) => res.data),
+  createGroup: async (data: CreateGroupRequest): Promise<ChatGroup> => {
+    try {
+      const response = await apiClient.post("/groups", data);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  updateGroup: (id: string, data: any): Promise<ChatGroup> =>
-    apiClient.put(`/groups/${id}`, data).then((res) => res.data),
+  updateGroup: async (id: string, data: UpdateGroupRequest): Promise<ChatGroup> => {
+    try {
+      const response = await apiClient.put(`/groups/${id}`, data);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  deleteGroup: (id: string): Promise<{ message: string }> =>
-    apiClient.delete(`/groups/${id}`).then((res) => res.data),
+  deleteGroup: async (id: string): Promise<{ message: string }> => {
+    try {
+      const response = await apiClient.delete(`/groups/${id}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  getGroupStats: (id: string): Promise<any> =>
-    apiClient.get(`/groups/${id}/stats`).then((res) => res.data),
+  getGroupStats: async (id: string): Promise<any> => {
+    try {
+      const response = await apiClient.get(`/groups/${id}/stats`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  addParticipant: (id: string, phoneNumber: string): Promise<ChatGroup> =>
-    apiClient
-      .post(`/groups/${id}/participants`, { phoneNumber })
-      .then((res) => res.data),
+  addParticipant: async (id: string, phoneNumber: string): Promise<ChatGroup> => {
+    try {
+      const response = await apiClient.post(`/groups/${id}/participants`, { phoneNumber });
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 
-  removeParticipant: (id: string, phoneNumber: string): Promise<ChatGroup> =>
-    apiClient
-      .delete(`/groups/${id}/participants/${phoneNumber}`)
-      .then((res) => res.data),
+  removeParticipant: async (id: string, phoneNumber: string): Promise<ChatGroup> => {
+    try {
+      const response = await apiClient.delete(`/groups/${id}/participants/${phoneNumber}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 };
 
 export default apiClient;

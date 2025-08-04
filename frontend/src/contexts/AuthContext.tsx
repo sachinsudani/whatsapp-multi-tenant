@@ -4,7 +4,7 @@ import type {
   UserGroup,
   Tenant,
   AuthResponse,
-} from "../../../shared/types/auth";
+} from "../types/auth";
 import { authAPI } from "../lib/api";
 
 interface AuthContextType {

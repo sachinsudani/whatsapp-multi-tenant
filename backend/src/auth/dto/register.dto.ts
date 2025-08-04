@@ -6,6 +6,8 @@ import {
   MinLength,
   MaxLength,
   Matches,
+  IsOptional,
+  IsMongoId,
 } from 'class-validator';
 
 export class RegisterDto {
@@ -57,9 +59,26 @@ export class RegisterDto {
     example: '+1234567890',
     required: false,
   })
+  @IsOptional()
   @IsString({ message: 'Phone number must be a string' })
   @Matches(/^\+?[1-9]\d{1,14}$/, {
     message: 'Please provide a valid phone number',
   })
   phoneNumber?: string;
+
+  @ApiProperty({
+    description: 'Tenant ID',
+    example: '507f1f77bcf86cd799439012',
+  })
+  @IsMongoId({ message: 'tenantId must be a valid MongoDB ObjectId' })
+  @IsNotEmpty({ message: 'tenantId is required' })
+  tenantId: string;
+
+  @ApiProperty({
+    description: 'User Group ID',
+    example: '507f1f77bcf86cd799439013',
+  })
+  @IsMongoId({ message: 'userGroupId must be a valid MongoDB ObjectId' })
+  @IsNotEmpty({ message: 'userGroupId is required' })
+  userGroupId: string;
 }
