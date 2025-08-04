@@ -1,27 +1,27 @@
-import React, { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { contactsAPI, whatsappAPI } from "../lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Users,
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  Phone,
-  Mail,
-  MessageSquare,
-  RefreshCw,
-  X,
-  User,
-  Building,
-  Calendar,
-  BarChart3,
-  Send,
+    BarChart3,
+    Building,
+    Calendar,
+    Edit,
+    Mail,
+    MessageSquare,
+    Phone,
+    Plus,
+    RefreshCw,
+    Search,
+    Send,
+    Trash2,
+    User,
+    Users,
+    X,
 } from "lucide-react";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { contactsAPI, whatsappAPI } from "../lib/api";
 
 // Form validation schemas
 const contactSchema = z.object({
@@ -165,7 +165,7 @@ const ContactsPage: React.FC = () => {
     const message = prompt('Enter message to send:');
     if (message) {
       sendMessageMutation.mutate({
-        to: phoneNumber,
+        phoneNumber: phoneNumber,
         content: message,
         deviceId: connectedDevice.id,
       });

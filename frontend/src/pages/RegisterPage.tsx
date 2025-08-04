@@ -1,7 +1,7 @@
+import { Eye, EyeOff, Lock, Mail, Phone, User } from "lucide-react";
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { authAPI } from "../lib/api";
-import { Mail, Lock, Eye, EyeOff, User, Phone } from "lucide-react";
 
 const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -9,6 +9,7 @@ const RegisterPage: React.FC = () => {
     lastName: "",
     email: "",
     phoneNumber: "",
+    tenantName: "",
     password: "",
     confirmPassword: "",
   });
@@ -52,8 +53,9 @@ const RegisterPage: React.FC = () => {
         lastName: formData.lastName,
         email: formData.email,
         phoneNumber: formData.phoneNumber,
+        tenantName: formData.tenantName,
         password: formData.password,
-      } as any);
+      });
 
       // Registration successful, redirect to login
       navigate("/login", {
@@ -165,6 +167,32 @@ const RegisterPage: React.FC = () => {
                   onChange={handleInputChange}
                   className="input pl-10"
                   placeholder="Enter your phone number"
+                />
+              </div>
+            </div>
+
+            {/* Company/Organization Name */}
+            <div>
+              <label
+                htmlFor="tenantName"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Company/Organization Name
+              </label>
+              <div className="mt-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="tenantName"
+                  name="tenantName"
+                  type="text"
+                  autoComplete="organization"
+                  required
+                  value={formData.tenantName}
+                  onChange={handleInputChange}
+                  className="input pl-10"
+                  placeholder="Enter your company or organization name"
                 />
               </div>
             </div>

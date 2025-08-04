@@ -1,16 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-  Activity,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  MessageSquare,
-  RefreshCw,
-  Send,
-  Smartphone,
-  TrendingUp,
-  UserPlus,
-  Users,
+    Activity,
+    AlertCircle,
+    CheckCircle,
+    Clock,
+    MessageSquare,
+    RefreshCw,
+    Send,
+    Smartphone,
+    TrendingUp,
+    UserPlus,
+    Users,
 } from "lucide-react";
 import React, { useState } from "react";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -62,7 +62,7 @@ const DashboardPage: React.FC = () => {
     refetchInterval: 60000, // Refresh every minute
   });
 
-  const { data: messageStats, isLoading: statsLoading } = useQuery({
+  const { data: messageStats } = useQuery({
     queryKey: ["messageStats"],
     queryFn: () => whatsappAPI.getMessageStats({ period: "24h" }),
     refetchInterval: 300000, // Refresh every 5 minutes
@@ -86,7 +86,7 @@ const DashboardPage: React.FC = () => {
   const activeDevices =
     devices?.filter((d) => d.status === "connected").length || 0;
   const totalDevices = devices?.length || 0;
-  const totalMessages = messagesData?.total || 0;
+
   const totalContacts = contacts?.length || 0;
   const totalGroups = groups?.length || 0;
   const recentMessages = messagesData?.messages || [];

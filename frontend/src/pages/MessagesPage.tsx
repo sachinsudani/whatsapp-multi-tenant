@@ -1,18 +1,18 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Eye,
-  Filter,
-  MessageSquare,
-  Plus,
-  RefreshCw,
-  Search,
-  Send,
-  Trash2,
-  X,
+    AlertCircle,
+    CheckCircle,
+    Clock,
+    Eye,
+    Filter,
+    MessageSquare,
+    Plus,
+    RefreshCw,
+    Search,
+    Send,
+    Trash2,
+    X,
 } from "lucide-react";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -109,7 +109,10 @@ const MessagesPage: React.FC = () => {
     ) || [];
 
   const onSubmit = (data: SendMessageForm) => {
-    sendMessageMutation.mutate(data);
+    sendMessageMutation.mutate({
+      ...data,
+      phoneNumber: data.to
+    });
   };
 
   const handleDeleteMessage = (messageId: string) => {

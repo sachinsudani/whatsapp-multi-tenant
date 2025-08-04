@@ -1,20 +1,20 @@
-import React from "react";
-import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
 import {
-  Home,
-  Smartphone,
-  MessageSquare,
-  Users,
-  UserPlus,
-  Settings,
-  LogOut,
-  Menu,
-  X,
+    Home,
+    LogOut,
+    Menu,
+    MessageSquare,
+    Settings,
+    Smartphone,
+    UserPlus,
+    Users,
+    X,
 } from "lucide-react";
+import React from "react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const Layout: React.FC = () => {
-  const { user, userGroup, tenant, logout } = useAuth();
+  const { user, userGroup, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);

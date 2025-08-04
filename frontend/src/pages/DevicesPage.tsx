@@ -1,19 +1,17 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AlertCircle,
-  Battery,
-  CheckCircle,
-  Clock,
-  Edit,
-  Plus,
-  QrCode,
-  RefreshCw,
-  Smartphone,
-  Trash2,
-  X,
-  Wifi,
-  WifiOff,
+    AlertCircle,
+    CheckCircle,
+    Clock,
+    Edit,
+    Plus,
+    QrCode,
+    RefreshCw,
+    Smartphone,
+    Trash2,
+    Wifi,
+    X,
 } from "lucide-react";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";

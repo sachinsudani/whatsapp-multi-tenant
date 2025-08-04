@@ -1,25 +1,22 @@
-import React, { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { groupsAPI, whatsappAPI } from "../lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  UserPlus,
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  Users,
-  MessageSquare,
-  RefreshCw,
-  X,
-  Settings,
-  UserMinus,
-  Send,
-  BarChart3,
+    Edit,
+    MessageSquare,
+    Plus,
+    RefreshCw,
+    Search,
+    Trash2,
+    UserMinus,
+    UserPlus,
+    Users,
+    X,
 } from "lucide-react";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { groupsAPI, whatsappAPI } from "../lib/api";
 
 const groupSchema = z.object({
   name: z.string().min(1, "Group name is required"),
@@ -31,7 +28,7 @@ type GroupForm = z.infer<typeof groupSchema>;
 const GroupsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
+
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
   const [newMemberPhone, setNewMemberPhone] = useState("");
@@ -58,16 +55,7 @@ const GroupsPage: React.FC = () => {
     },
   });
 
-  const updateGroupMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: GroupForm }) =>
-      groupsAPI.updateGroup(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["groups"] });
-      setShowUpdateModal(false);
-      setSelectedGroup(null);
-      resetUpdateForm();
-    },
-  });
+
 
   const deleteGroupMutation = useMutation({
     mutationFn: groupsAPI.deleteGroup,
@@ -107,10 +95,6 @@ const GroupsPage: React.FC = () => {
   });
 
   const {
-    register: registerUpdate,
-    handleSubmit: handleSubmitUpdate,
-    formState: { errors: updateErrors },
-    reset: resetUpdateForm,
     setValue: setUpdateValue,
   } = useForm<GroupForm>({
     resolver: zodResolver(groupSchema),
@@ -120,11 +104,7 @@ const GroupsPage: React.FC = () => {
     createGroupMutation.mutate(data);
   };
 
-  const onUpdateSubmit = (data: GroupForm) => {
-    if (selectedGroup) {
-      updateGroupMutation.mutate({ id: selectedGroup.id, data });
-    }
-  };
+
 
   const handleDeleteGroup = (groupId: string, groupName: string) => {
     if (window.confirm(`Are you sure you want to delete "${groupName}"?`)) {
@@ -136,7 +116,6 @@ const GroupsPage: React.FC = () => {
     setSelectedGroup(group);
     setUpdateValue("name", group.name);
     setUpdateValue("description", group.description || "");
-    setShowUpdateModal(true);
   };
 
   const handleManageMembers = (group: any) => {
@@ -172,7 +151,7 @@ const GroupsPage: React.FC = () => {
     const message = prompt('Enter message to send to group:');
     if (message) {
       sendMessageMutation.mutate({
-        to: groupId,
+        groupId: groupId,
         content: message,
         deviceId: connectedDevice.id,
       });

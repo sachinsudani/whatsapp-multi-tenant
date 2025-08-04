@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: whatsapp_mongodb
+    environment:
+      MONGO_INITDB_DATABASE: whatsapp_multi_tenant
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - whatsapp_network
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: whatsapp_redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - whatsapp_network
+    restart: unless-stopped
+
+  # WAHA WhatsApp API
+  waha:
+    image: devlikeapro/waha
+    container_name: whatsapp_waha
+    ports:
+      - '3001:3000'
+    environment:
+      - WHATSAPP_DEFAULT_ANSWER=Hello! This is a WhatsApp API service.
+      - WHATSAPP_SESSION_STORE_TYPE=file
+      - WHATSAPP_SESSION_STORE_PATH=/app/sessions
+    volumes:
+      - waha_sessions:/app/sessions
+    networks:
+      - whatsapp_network
+    restart: unless-stopped
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: whatsapp_backend
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/whatsapp_multi_tenant
+      - REDIS_URL=redis://redis:6379
+      - WAHA_API_URL=http://waha:3000
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
+    depends_on:
+      - mongodb
+      - redis
+      - waha
+    networks:
+      - whatsapp_network
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: whatsapp_frontend
+    ports:
+      - '5173:80'
+    environment:
+      - VITE_API_URL=http://localhost:3000
+      - VITE_WS_URL=ws://localhost:3000
+    depends_on:
+      - backend
+    networks:
+      - whatsapp_network
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+  redis_data:
+  waha_sessions:
+
+networks:
+  whatsapp_network:
+    driver: bridge 

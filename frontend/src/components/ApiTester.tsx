@@ -1,12 +1,12 @@
+import { CheckCircle, Clock, Play, RefreshCw, XCircle } from 'lucide-react';
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { ScrollArea } from './ui/scroll-area';
+import { authAPI, contactsAPI, groupsAPI, whatsappAPI } from '../lib/api';
 import { Alert, AlertDescription } from './ui/alert';
-import { CheckCircle, XCircle, Clock, Play, RefreshCw } from 'lucide-react';
-import { authAPI, whatsappAPI, contactsAPI, groupsAPI } from '../lib/api';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { ScrollArea } from './ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 interface TestResult {
   name: string;
@@ -37,7 +37,8 @@ const ApiTester: React.FC = () => {
     lastName: 'User',
     email: `test-${Date.now()}@example.com`,
     password: 'TestPassword123!',
-    phoneNumber: '+1234567890'
+    phoneNumber: '+1234567890',
+    tenantName: 'Test Company'
   });
 
   const updateTestResult = (suiteName: string, testName: string, result: Partial<TestResult>) => {
