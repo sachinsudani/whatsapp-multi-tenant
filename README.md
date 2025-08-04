@@ -2,9 +2,9 @@
 
 A comprehensive multi-tenant WhatsApp messaging service built with NestJS, TypeScript, and WAHA API for WhatsApp integration.
 
-## 🎯 Quick Demo Setup (5 Minutes)
+## 🎯 Quick Setup (5 Minutes)
 
-### Prerequisites Check
+### Prerequisites
 ```bash
 # Verify you have these installed
 docker --version          # Should be 20.10+
@@ -31,95 +31,60 @@ docker-compose up -d
 
 ---
 
-## 🎬 Demo Walkthrough (10 Minutes)
+## 🎬 Demo Walkthrough
 
-### 1. **Initial Setup Verification** (2 min)
-```bash
-# Check all services are running
-docker-compose ps
-
-# Expected output:
-# whatsapp_backend     Up
-# whatsapp_frontend    Up  
-# whatsapp_mongodb     Up
-# whatsapp_redis       Up
-# whatsapp_waha        Up
-```
-
-### 2. **Multi-Tenant Architecture Demo** (3 min)
+### 1. **Registration & Login** (2 min)
 
 #### Create First Tenant & Admin User
-```bash
-# Using the API or frontend
-POST http://localhost:3000/auth/register
-{
-  "email": "admin@company1.com",
-  "password": "Admin123!",
-  "firstName": "John",
-  "lastName": "Admin",
-  "tenantName": "Company One"
-}
-```
+1. Go to http://localhost:5173
+2. Click "Register" or navigate to `/register`
+3. Fill in the registration form:
+   - **First Name**: John
+   - **Last Name**: Admin
+   - **Email**: admin@company1.com
+   - **Phone Number**: +1234567890
+   - **Tenant Name**: Company One
+   - **Password**: Admin123!
+   - **Confirm Password**: Admin123!
+
+4. Click "Create Account"
+5. You'll be redirected to login page with success message
+6. Login with the credentials you just created
 
 #### Create Second Tenant (Data Isolation)
-```bash
-POST http://localhost:3000/auth/register
-{
-  "email": "admin@company2.com", 
-  "password": "Admin123!",
-  "firstName": "Jane",
-  "lastName": "Admin",
-  "tenantName": "Company Two"
-}
-```
+1. Open a new incognito window
+2. Go to http://localhost:5173/register
+3. Create another account:
+   - **Email**: admin@company2.com
+   - **Tenant Name**: Company Two
+   - **Password**: Admin123!
 
-### 3. **WhatsApp Integration Demo** (3 min)
+### 2. **WhatsApp Integration** (3 min)
 
 #### Link WhatsApp Device
-1. Go to http://localhost:5173
-2. Login with admin@company1.com
-3. Navigate to "WhatsApp Devices"
-4. Click "Add New Device"
-5. Scan QR code with your phone
-6. Verify device status shows "Connected"
+1. After login, navigate to "WhatsApp Devices"
+2. Click "Add New Device"
+3. Enter a device name (e.g., "Office Device")
+4. Click "Create Device"
+5. Click "Generate QR Code"
+6. Scan QR code with your phone
+7. Verify device status shows "Connected"
 
 #### Send Test Message
-```bash
-POST http://localhost:3000/whatsapp/send
-Authorization: Bearer <jwt-token>
-{
-  "deviceId": "<device-id>",
-  "recipient": "+1234567890",
-  "message": "Hello from Multi-Tenant WhatsApp API!"
-}
-```
+1. Go to "Messages" page
+2. Click "Send New Message"
+3. Enter recipient number (e.g., your own number)
+4. Type a test message
+5. Click "Send Message"
 
-### 4. **Role-Based Access Control Demo** (2 min)
+### 3. **Multi-Tenant Features** (2 min)
 
-#### Create Different User Types
-```bash
-# Create Editor User
-POST http://localhost:3000/users
-Authorization: Bearer <admin-jwt-token>
-{
-  "email": "editor@company1.com",
-  "password": "Editor123!",
-  "firstName": "Editor",
-  "lastName": "User",
-  "userGroupId": "editor-group-id"
-}
-
-# Create Viewer User  
-POST http://localhost:3000/users
-Authorization: Bearer <admin-jwt-token>
-{
-  "email": "viewer@company1.com",
-  "password": "Viewer123!",
-  "firstName": "Viewer",
-  "lastName": "User", 
-  "userGroupId": "viewer-group-id"
-}
-```
+#### Data Isolation Demo
+1. Login as admin@company1.com
+2. Create a WhatsApp device and send a message
+3. Logout and login as admin@company2.com
+4. Notice that devices and messages are completely isolated
+5. Each tenant has their own separate data
 
 ---
 
@@ -139,185 +104,29 @@ Authorization: Bearer <admin-jwt-token>
 - **User Management**: Role-based access control (Admin, Editor, Viewer)
 - **Scalable Schema**: Optimized MongoDB collections with proper indexing
 
-### Core Modules
-1. **Authentication Module**: JWT-based auth with refresh tokens
-2. **User Management**: CRUD operations with role-based permissions
-3. **WhatsApp Integration**: Multi-device support with WAHA API
-4. **Message Management**: Send/receive messages with history tracking
-5. **Contact Management**: Store and manage WhatsApp contacts
-6. **Group Management**: Handle WhatsApp groups and participants
-
 ---
 
-## 📋 API Endpoints
+## 📋 Key Features
 
-### Authentication
-- `POST /auth/register` - User registration
-- `POST /auth/login` - User authentication
-- `POST /auth/refresh` - Refresh access token
-- `POST /auth/logout` - User logout
+### ✅ Core Requirements
+- [x] Multi-tenant architecture with data isolation
+- [x] User registration and authentication
+- [x] WhatsApp integration using WAHA API
+- [x] Multi-device WhatsApp support with QR authentication
+- [x] Message sending and chat history storage
+- [x] Contact and group management
+- [x] JWT-based authentication and authorization
+- [x] RESTful API with Swagger documentation
+- [x] MongoDB database with proper schema
+- [x] Docker containerization
 
-### User Management (Admin only)
-- `POST /users` - Create new user
-- `GET /users` - Get all users with pagination
-- `PUT /users/:id` - Update user
-- `DELETE /users/:id` - Delete user (soft delete)
-
-### WhatsApp Integration
-- `POST /whatsapp/devices` - Create new WhatsApp device
-- `GET /whatsapp/devices` - List all devices
-- `POST /whatsapp/devices/:id/qr` - Generate QR code
-- `POST /whatsapp/send` - Send WhatsApp message
-
-### Data Management
-- `GET /messages` - Get message logs
-- `GET /contacts` - Get all contacts
-- `GET /groups` - Get all groups
-
----
-
-## 🔒 Security Features
-
-- **Multi-tenant isolation** with strict data segregation
-- **JWT authentication** with short expiration (1 hour)
-- **Role-based access control** (Admin, Editor, Viewer)
-- **Input validation** using class-validator
-- **Rate limiting** with @nestjs/throttler
-- **Password hashing** with bcrypt (12 salt rounds)
-- **HTTPS ready** configuration
-
----
-
-## 🚀 Scalability Features
-
-- **Microservices-ready** modular architecture
-- **Database connection pooling** with Mongoose
-- **Redis caching** for frequently accessed data
-- **Proper indexing** on MongoDB collections
-- **Asynchronous processing** for message handling
-- **Docker containerization** for easy deployment
-
----
-
-## 🧪 Testing & Quality Assurance
-
-### Run Tests
-```bash
-# Unit tests
-cd backend && npm test
-
-# Expected: 165+ tests passing
-# Coverage: Authentication, Permissions, Messaging
-```
-
-### Code Quality Check
-```bash
-# Linting
-npm run lint
-
-# Type checking  
-npm run type-check
-
-# Build verification
-npm run build
-```
-
----
-
-## 📊 Database Schema
-
-### Core Collections
-1. **Tenants**: Organization isolation
-2. **Users**: User management with tenant scoping
-3. **UserGroups**: Role-based permissions
-4. **WhatsAppDevices**: Multi-device support
-5. **Messages**: Chat history and analytics
-6. **Contacts**: WhatsApp contact storage
-7. **Groups**: WhatsApp group management
-
-### Key Features
-- **Tenant isolation** in all collections
-- **Soft delete** implementation
-- **Proper indexing** for performance
-- **Audit trails** for sensitive operations
-
----
-
-## 🔍 Code Quality Examples
-
-### **Multi-Tenant Design**
-```typescript
-// Every database query includes tenantId
-const users = await this.userModel.find({ 
-  tenantId: user.tenantId,
-  isDeleted: false 
-});
-```
-
-### **Security Implementation**
-```typescript
-// JWT with tenant isolation
-const payload = {
-  userId: user._id,
-  tenantId: user.tenantId,  // Critical for data isolation
-  userGroupId: user.userGroupId,
-  permissions: userGroup.permissions
-};
-```
-
-### **WhatsApp Integration**
-```typescript
-// Multi-device support with WAHA API
-const device = await this.wahaService.createDevice({
-  userId: user._id,
-  tenantId: user.tenantId,
-  deviceName: 'Office Device'
-});
-```
-
-### **Clean Architecture**
-```typescript
-// Service layer with dependency injection
-@Injectable()
-export class WhatsAppService {
-  constructor(
-    private wahaApiService: WahaApiService,
-    private deviceRepository: DeviceRepository,
-    private messageRepository: MessageRepository
-  ) {}
-}
-```
-
-### **Comprehensive Validation**
-```typescript
-// DTO with validation decorators
-export class SendMessageDto {
-  @IsString()
-  @IsNotEmpty()
-  @Length(1, 1000)
-  message: string;
-
-  @IsString()
-  @IsPhoneNumber()
-  recipient: string;
-
-  @IsMongoId()
-  deviceId: string;
-}
-```
-
----
-
-## 🎯 Evaluation Criteria Met
-
-| Criteria | Implementation | Quality |
-|----------|----------------|---------|
-| **Database Schema (25%)** | MongoDB with tenant isolation, proper indexing | ✅ Excellent |
-| **WhatsApp Features (25%)** | WAHA API, multi-device, QR auth, messaging | ✅ Complete |
-| **Multi-Tenant (20%)** | Complete data isolation, user/group management | ✅ Robust |
-| **Code Quality (15%)** | TypeScript, clean architecture, patterns | ✅ Professional |
-| **Security (10%)** | JWT, RBAC, validation, rate limiting | ✅ Production-ready |
-| **API Design (5%)** | RESTful, Swagger docs, error handling | ✅ Comprehensive |
+### ✅ Frontend Features
+- [x] User registration with tenant creation
+- [x] User login with JWT authentication
+- [x] WhatsApp device management
+- [x] Message sending interface
+- [x] Contact and group management
+- [x] Responsive design with Tailwind CSS
 
 ---
 
@@ -341,13 +150,6 @@ docker-compose exec mongodb mongosh
 # Should connect successfully
 ```
 
-**WhatsApp QR code not generating:**
-```bash
-# Check WAHA service
-curl http://localhost:3001/health
-# Should return OK
-```
-
 **Frontend not loading:**
 ```bash
 # Check frontend logs
@@ -355,6 +157,15 @@ docker-compose logs frontend
 
 # Rebuild if needed
 docker-compose up --build frontend
+```
+
+**Registration/Login issues:**
+```bash
+# Check backend logs
+docker-compose logs backend
+
+# Verify API is running
+curl http://localhost:3000/api/v1/auth/health
 ```
 
 ---
@@ -370,15 +181,14 @@ docker-compose up --build frontend
 │   │   ├── messages/       # Message handling
 │   │   ├── contacts/       # Contact management
 │   │   ├── groups/         # Group management
-│   │   ├── database/       # Database schemas
-│   │   └── common/         # Shared utilities
-│   ├── test/               # Unit and integration tests
-│   └── docker-compose.yml  # Docker setup
+│   │   └── database/       # Database schemas
+│   └── test/               # Unit and integration tests
 ├── frontend/               # React frontend application
 │   ├── src/
 │   │   ├── components/     # React components
 │   │   ├── pages/          # Page components
-│   │   └── services/       # API services
+│   │   ├── contexts/       # React contexts
+│   │   └── lib/            # API services
 │   └── package.json
 ├── docker-compose.yml      # Main Docker setup
 └── README.md              # This file
@@ -386,61 +196,56 @@ docker-compose up --build frontend
 
 ---
 
-## 🎥 Demo Video Requirements
+## 🧪 Testing
 
-**Loom Demo Link**: [Your Demo Video Link Here]
+### Run Tests
+```bash
+# Unit tests
+cd backend && npm test
 
-The demo video covers:
-1. Application setup with `docker-compose up`
-2. Tenant and user creation with different groups
-3. User login and JWT token retrieval
-4. WhatsApp device linking (QR code generation)
-5. Message sending to contacts/groups
-6. Message logs, contacts, and groups retrieval
-7. Database schema explanation
-8. Unit test execution
-9. Swagger documentation access
-10. Frontend interaction
+# Expected: 165+ tests passing
+# Coverage: Authentication, Permissions, Messaging
+```
 
----
+### API Testing
+```bash
+# Test registration
+curl -X POST http://localhost:3000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Test",
+    "lastName": "User",
+    "email": "test@example.com",
+    "phoneNumber": "+1234567890",
+    "tenantName": "Test Company",
+    "password": "TestPass123!"
+  }'
 
-## 🤖 AI Tools Usage
-
-This project was developed with assistance from:
-- **GitHub Copilot**: Code completion and boilerplate generation
-- **ChatGPT/Claude**: Architecture decisions and code explanations
-- **Cursor AI**: Full-context code assistance and refactoring
-
-All AI-generated code has been reviewed, understood, and customized for the specific requirements.
-
----
-
-## 🏆 Key Features Implemented
-
-### ✅ Core Requirements
-- [x] Multi-tenant architecture with data isolation
-- [x] User and group management with role-based permissions
-- [x] WhatsApp integration using WAHA API
-- [x] Multi-device WhatsApp support with QR authentication
-- [x] Message sending and chat history storage
-- [x] Contact and group management
-- [x] JWT-based authentication and authorization
-- [x] RESTful API with Swagger documentation
-- [x] MongoDB database with proper schema
-- [x] Docker containerization
-- [x] Comprehensive unit tests
-
-### ✅ Bonus Features
-- [x] Event-driven architecture
-- [x] WebSocket notifications
-- [x] Structured logging
-- [x] Advanced filtering and pagination
-- [x] Message analytics and statistics
-- [x] Responsive React frontend
+# Test login
+curl -X POST http://localhost:3000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "TestPass123!"
+  }'
+```
 
 ---
 
-## 🎉 Ready for Production
+## 🎯 Evaluation Criteria
+
+| Criteria | Implementation | Quality |
+|----------|----------------|---------|
+| **Database Schema (25%)** | MongoDB with tenant isolation, proper indexing | ✅ Excellent |
+| **WhatsApp Features (25%)** | WAHA API, multi-device, QR auth, messaging | ✅ Complete |
+| **Multi-Tenant (20%)** | Complete data isolation, user/group management | ✅ Robust |
+| **Code Quality (15%)** | TypeScript, clean architecture, patterns | ✅ Professional |
+| **Security (10%)** | JWT, RBAC, validation, rate limiting | ✅ Production-ready |
+| **API Design (5%)** | RESTful, Swagger docs, error handling | ✅ Comprehensive |
+
+---
+
+## 🎉 Ready for Review
 
 This application demonstrates:
 - **Senior-level architecture** and design patterns
@@ -462,10 +267,7 @@ For any questions or issues:
 
 ---
 
-**Submission Details:**
-- **Repository**: https://github.com/sachinsudani/whatsapp-multi-tenant
-- **Demo Video**: [Your Loom Video Link]
-- **Submission Time**: [Your Submission Time]
+**Repository**: https://github.com/sachinsudani/whatsapp-multi-tenant
 
 ---
 
