@@ -37,6 +37,8 @@ services:
       - WHATSAPP_DEFAULT_ANSWER=Hello! This is a WhatsApp API service.
       - WHATSAPP_SESSION_STORE_TYPE=file
       - WHATSAPP_SESSION_STORE_PATH=/app/sessions
+      - WHATSAPP_WEBHOOK_BY_EVENTS=true
+      - WHATSAPP_WEBHOOK_GLOBAL_URL=http://backend:3000/api/v1/whatsapp/webhook
     volumes:
       - waha_sessions:/app/sessions
     networks:
@@ -52,12 +54,21 @@ services:
     ports:
       - '3000:3000'
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
+      - PORT=3000
+      - API_PREFIX=api/v1
+      - APP_URL=http://localhost:3000
+      - FRONTEND_URL=http://localhost:5173
       - MONGODB_URI=mongodb://mongodb:27017/whatsapp_multi_tenant
-      - REDIS_URL=redis://redis:6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
       - WAHA_API_URL=http://waha:3000
+      - WAHA_API_KEY=your-waha-api-key
+      - USE_BAILEYS=false
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production
       - JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
+      - JWT_EXPIRES_IN=1h
+      - JWT_REFRESH_EXPIRES_IN=7d
     depends_on:
       - mongodb
       - redis

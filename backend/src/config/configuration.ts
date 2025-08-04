@@ -32,6 +32,13 @@ export default () => ({
     whatsapp: {
         apiUrl: process.env.WAHA_API_URL || 'http://localhost:3001',
         apiKey: process.env.WAHA_API_KEY || 'your-waha-api-key',
+        useBaileys: process.env.USE_BAILEYS === 'true' || false,
+        baileysConfig: {
+            printQRInTerminal: process.env.BAILEYS_PRINT_QR === 'true' || false,
+            auth: {
+                creds: process.env.BAILEYS_CREDS_PATH || './baileys-creds.json',
+            },
+        },
     },
 
     throttle: {
