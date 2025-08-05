@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import type {
-  User,
-  UserGroup,
-  Tenant,
-  AuthResponse,
-} from "../types/auth";
 import { authAPI } from "../lib/api";
+import type {
+    AuthResponse,
+    Tenant,
+    User,
+    UserGroup,
+} from "../types/auth";
 
 interface AuthContextType {
   user: User | null;
@@ -53,10 +53,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUserGroup(response.userGroup);
       setTenant(response.tenant);
 
-      // Store user data in localStorage for persistence
+      // Store user data in localStorage for persistence (only if not undefined)
       localStorage.setItem("user", JSON.stringify(response.user));
-      localStorage.setItem("userGroup", JSON.stringify(response.userGroup));
-      localStorage.setItem("tenant", JSON.stringify(response.tenant));
+      if (response.userGroup) {
+        localStorage.setItem("userGroup", JSON.stringify(response.userGroup));
+      }
+      if (response.tenant) {
+        localStorage.setItem("tenant", JSON.stringify(response.tenant));
+      }
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
@@ -79,6 +83,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null);
       setUserGroup(null);
       setTenant(null);
+      
+      // Don't redirect automatically - let the app handle navigation
     }
   };
 
@@ -100,10 +106,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUserGroup(response.userGroup);
       setTenant(response.tenant);
 
-      // Update localStorage
+      // Update localStorage (only if not undefined)
       localStorage.setItem("user", JSON.stringify(response.user));
-      localStorage.setItem("userGroup", JSON.stringify(response.userGroup));
-      localStorage.setItem("tenant", JSON.stringify(response.tenant));
+      if (response.userGroup) {
+        localStorage.setItem("userGroup", JSON.stringify(response.userGroup));
+      }
+      if (response.tenant) {
+        localStorage.setItem("tenant", JSON.stringify(response.tenant));
+      }
     } catch (error) {
       console.error("Token refresh failed:", error);
       await logout();
@@ -119,17 +129,68 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const storedTenant = localStorage.getItem("tenant");
         const accessToken = localStorage.getItem("accessToken");
 
-        if (storedUser && storedUserGroup && storedTenant && accessToken) {
-          setUser(JSON.parse(storedUser));
-          setUserGroup(JSON.parse(storedUserGroup));
-          setTenant(JSON.parse(storedTenant));
+        console.log("Auth initialization - localStorage values:", {
+          storedUser,
+          storedUserGroup,
+          storedTenant,
+          accessToken: accessToken ? "exists" : "missing"
+        });
 
-          // Try to refresh the token to ensure it's still valid
-          await refreshAuth();
+        if (storedUser && accessToken) {
+          // Only parse if the values are not null/undefined
+          if (storedUser !== "undefined") {
+            setUser(JSON.parse(storedUser));
+            
+            // Set userGroup and tenant if they exist and are valid
+            if (storedUserGroup && storedUserGroup !== "undefined") {
+              setUserGroup(JSON.parse(storedUserGroup));
+            }
+            if (storedTenant && storedTenant !== "undefined") {
+              setTenant(JSON.parse(storedTenant));
+            }
+
+            // Try to refresh the token to ensure it's still valid
+            try {
+              await refreshAuth();
+            } catch (error) {
+              console.log("Token refresh failed, but keeping stored session");
+              // Don't clear data if refresh fails, just keep the stored session
+            }
+          } else {
+            // Clear invalid data but don't redirect
+            console.log("Invalid localStorage data found, clearing...");
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("user");
+            localStorage.removeItem("userGroup");
+            localStorage.removeItem("tenant");
+            setUser(null);
+            setUserGroup(null);
+            setTenant(null);
+          }
+        } else {
+          console.log("Missing required auth data, staying on current page");
+          // Don't redirect, just clear any invalid data
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("user");
+          localStorage.removeItem("userGroup");
+          localStorage.removeItem("tenant");
+          setUser(null);
+          setUserGroup(null);
+          setTenant(null);
         }
       } catch (error) {
         console.error("Auth initialization failed:", error);
-        await logout();
+        // Clear all data on error but don't redirect
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
+        localStorage.removeItem("userGroup");
+        localStorage.removeItem("tenant");
+        setUser(null);
+        setUserGroup(null);
+        setTenant(null);
       } finally {
         setIsLoading(false);
       }

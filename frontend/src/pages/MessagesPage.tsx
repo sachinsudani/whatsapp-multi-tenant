@@ -22,7 +22,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 const MessagesPage: React.FC = () => {
   const [selectedDevice, setSelectedDevice] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [messageType, setMessageType] = useState<'text' | 'media'>('text');
+  const [messageType, setMessageType] = useState<'text' | 'image' | 'document' | 'audio' | 'video'>('text');
   const [composeMessage, setComposeMessage] = useState({
     phoneNumber: '',
     content: '',
@@ -213,12 +213,12 @@ const MessagesPage: React.FC = () => {
                     <label className="flex items-center">
                       <input
                         type="radio"
-                        value="media"
-                        checked={messageType === 'media'}
-                        onChange={(e) => setMessageType(e.target.value as 'media')}
+                        value="image"
+                        checked={messageType === 'image'}
+                        onChange={(e) => setMessageType(e.target.value as 'image')}
                         className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Media</span>
+                      <span className="ml-2 text-sm text-gray-700">Image</span>
                     </label>
                   </div>
                 </div>
@@ -239,7 +239,7 @@ const MessagesPage: React.FC = () => {
                 </div>
 
                 {/* Caption (for media) */}
-                {messageType === 'media' && (
+                {messageType !== 'text' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Caption (optional)

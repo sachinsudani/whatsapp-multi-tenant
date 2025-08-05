@@ -1,47 +1,30 @@
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     AlertCircle,
     CheckCircle,
     Clock,
-    Edit,
     Plus,
     QrCode,
     RefreshCw,
     Smartphone,
     Trash2,
     Wifi,
-    X,
 } from "lucide-react";
 import React, { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 import LoadingSpinner from "../components/LoadingSpinner";
 import QRModal from "../components/QRModal";
 import { whatsappAPI } from "../lib/api";
 
-// Form validation schemas
-const createDeviceSchema = z.object({
-  name: z.string().min(1, "Device name is required"),
-  description: z.string().optional(),
-});
-
-const updateDeviceSchema = z.object({
-  name: z.string().min(1, "Device name is required"),
-  description: z.string().optional(),
-});
-
-type CreateDeviceForm = z.infer<typeof createDeviceSchema>;
-type UpdateDeviceForm = z.infer<typeof updateDeviceSchema>;
-
 const DevicesPage: React.FC = () => {
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
-  const [selectedDevice, setSelectedDevice] = useState<any>(null);
   const [qrData, setQrData] = useState<any>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isNewDeviceFlow, setIsNewDeviceFlow] = useState(false);
 
   const queryClient = useQueryClient();
+
+  console.log('DevicesPage rendering...');
+  console.log('Modal state:', { showQRModal, qrData, sessionId, isNewDeviceFlow });
 
   // Fetch devices
   const {
@@ -54,26 +37,33 @@ const DevicesPage: React.FC = () => {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  // Create device mutation
-  const createDeviceMutation = useMutation({
-    mutationFn: whatsappAPI.createDevice,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["devices"] });
-      setShowCreateModal(false);
-      resetCreateForm();
-    },
-  });
+  console.log('Devices data:', devices);
+  console.log('Devices loading:', devicesLoading);
 
-  // Update device mutation
-  const updateDeviceMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateDeviceForm }) =>
-      whatsappAPI.updateDevice(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["devices"] });
-      setShowUpdateModal(false);
-      setSelectedDevice(null);
-      resetUpdateForm();
+  // New QR generation mutation for improved flow
+  const generateQRForNewDeviceMutation = useMutation({
+    mutationFn: () => {
+      console.log('Starting QR generation...');
+      return whatsappAPI.generateQRForNewDevice({
+        deviceName: `WhatsApp Device ${new Date().toLocaleTimeString()}`,
+        description: "Auto-generated device"
+      });
     },
+    onSuccess: (data) => {
+      console.log('QR generation success:', data);
+      console.log('Setting QR data:', data);
+      console.log('Setting session ID:', data.sessionId);
+      setQrData(data);
+      setSessionId(data.sessionId);
+      setIsNewDeviceFlow(true);
+      setShowQRModal(true);
+      console.log('Modal should now be open, qrData:', data);
+    },
+    onError: (error: any) => {
+      console.error('Failed to generate QR:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      alert('Failed to generate QR code. Please try again.');
+    }
   });
 
   // Delete device mutation
@@ -84,11 +74,13 @@ const DevicesPage: React.FC = () => {
     },
   });
 
-  // Generate QR mutation
+  // Generate QR mutation (for existing devices)
   const generateQRMutation = useMutation({
     mutationFn: whatsappAPI.generateQR,
     onSuccess: (data) => {
       setQrData(data);
+      setSessionId(null);
+      setIsNewDeviceFlow(false);
       setShowQRModal(true);
     },
   });
@@ -101,56 +93,35 @@ const DevicesPage: React.FC = () => {
     },
   });
 
-  // Form handling for create
-  const {
-    register: registerCreate,
-    handleSubmit: handleSubmitCreate,
-    formState: { errors: createErrors },
-    reset: resetCreateForm,
-  } = useForm<CreateDeviceForm>({
-    resolver: zodResolver(createDeviceSchema),
-  });
-
-  // Form handling for update
-  const {
-    register: registerUpdate,
-    handleSubmit: handleSubmitUpdate,
-    formState: { errors: updateErrors },
-    reset: resetUpdateForm,
-    setValue: setUpdateValue,
-  } = useForm<UpdateDeviceForm>({
-    resolver: zodResolver(updateDeviceSchema),
-  });
-
-  const onCreateSubmit = (data: CreateDeviceForm) => {
-    createDeviceMutation.mutate(data);
+  // Handle successful connection for new device
+  const handleConnectionSuccess = (deviceId: string) => {
+    setShowQRModal(false);
+    setQrData(null);
+    setSessionId(null);
+    setIsNewDeviceFlow(false);
+    
+    // Refresh devices list to show the new connected device
+    queryClient.invalidateQueries({ queryKey: ["devices"] });
+    
+    // Show success message
+    alert('Device connected successfully!');
   };
 
-  const onUpdateSubmit = (data: UpdateDeviceForm) => {
-    if (selectedDevice) {
-      updateDeviceMutation.mutate({ id: selectedDevice.id, data });
-    }
-  };
-
-  const handleDeleteDevice = (deviceId: string, deviceName: string) => {
+  const handleDeleteDevice = (deviceId: string) => {
     if (
       window.confirm(
-        `Are you sure you want to delete "${deviceName}"? This action cannot be undone.`
+        `Are you sure you want to delete this device? This action cannot be undone.`
       )
     ) {
       deleteDeviceMutation.mutate(deviceId);
     }
   };
 
-  const handleEditDevice = (device: any) => {
-    setSelectedDevice(device);
-    setUpdateValue("name", device.name);
-    setUpdateValue("description", device.description || "");
-    setShowUpdateModal(true);
+  const handleReconnectDevice = (deviceId: string) => {
+    generateQRMutation.mutate(deviceId);
   };
 
   const handleGenerateQR = (device: any) => {
-    setSelectedDevice(device);
     generateQRMutation.mutate(device.id);
   };
 
@@ -159,9 +130,21 @@ const DevicesPage: React.FC = () => {
   };
 
   const handleRefreshQR = () => {
-    if (selectedDevice) {
-      generateQRMutation.mutate(selectedDevice.id);
+    if (isNewDeviceFlow) {
+      // For new device flow, regenerate QR
+      generateQRForNewDeviceMutation.mutate();
     }
+  };
+
+  const handleAddDevice = () => {
+    console.log('=== ADD DEVICE BUTTON CLICKED ===');
+    console.log('Add Device button clicked');
+    console.log('User authenticated:', !!localStorage.getItem('accessToken'));
+    console.log('Access token exists:', localStorage.getItem('accessToken') ? 'Yes' : 'No');
+    console.log('Mutation pending:', generateQRForNewDeviceMutation.isPending);
+    
+    // Generate QR immediately without any form
+    generateQRForNewDeviceMutation.mutate();
   };
 
   const getStatusIcon = (status: string) => {
@@ -199,367 +182,177 @@ const DevicesPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">WhatsApp Devices</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage your WhatsApp devices and connections ({devices?.length || 0}{" "}
-            devices)
-          </p>
-        </div>
-        <div className="flex space-x-3">
-          <button
-            onClick={() => refetchDevices()}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </button>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Device
-          </button>
-        </div>
-      </div>
-
-      {/* WAHA Service Status */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0">
-              <Wifi className="h-5 w-5 text-green-500" />
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-900">WAHA Service</h3>
-              <p className="text-sm text-gray-500">WhatsApp HTTP API service status</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
-              Online
-            </span>
-            <a
-              href="http://localhost:3001/docs"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-800"
-            >
-              Dashboard →
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* Devices Grid */}
-      {devices && devices.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {devices.map((device) => (
-            <div
-              key={device.id}
-              className="bg-white rounded-lg shadow hover:shadow-md transition-shadow"
-            >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                        <Smartphone className="h-5 w-5 text-primary-600" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900">
-                        {device.name}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        {device.description || "No description"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleEditDevice(device)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteDevice(device.id, device.name)}
-                      className="text-gray-400 hover:text-red-600"
-                      disabled={deleteDeviceMutation.isPending}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">WhatsApp Devices</h1>
+                <p className="mt-1 text-sm text-gray-500">
+                  Manage your connected WhatsApp devices and send messages
+                </p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>{devices?.length || 0} devices</span>
                 </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500">Status</span>
-                    <span
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                        device.status
-                      )}`}
-                    >
-                      {getStatusIcon(device.status)}
-                      <span className="ml-1 capitalize">{device.status}</span>
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500">Last Seen</span>
-                    <span className="text-sm text-gray-900">
-                      {device.lastConnectedAt
-                        ? new Date(device.lastConnectedAt).toLocaleString()
-                        : "Never"}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500">Messages</span>
-                    <span className="text-sm text-gray-900">
-                      {device.messagesSent || 0} sent
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-6 flex space-x-2">
-                  {device.status !== "connected" && (
-                    <button
-                      onClick={() => handleGenerateQR(device)}
-                      disabled={generateQRMutation.isPending}
-                      className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-                    >
-                      {generateQRMutation.isPending ? (
-                        <RefreshCw className="animate-spin h-4 w-4 mr-2" />
-                      ) : (
-                        <QrCode className="h-4 w-4 mr-2" />
-                      )}
-                      Connect
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleCheckStatus(device.id)}
-                    disabled={getDeviceStatusMutation.isPending}
-                    className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-                  >
-                    {getDeviceStatusMutation.isPending ? (
+                <button
+                  onClick={handleAddDevice}
+                  disabled={generateQRForNewDeviceMutation.isPending}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors duration-200"
+                >
+                  {generateQRForNewDeviceMutation.isPending ? (
+                    <>
                       <RefreshCw className="animate-spin h-4 w-4 mr-2" />
-                    ) : (
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                    )}
-                    Status
-                  </button>
-                </div>
+                      Generating QR...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Device
+                    </>
+                  )}
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <Smartphone className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No devices</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Get started by adding your first WhatsApp device.
-          </p>
-          <div className="mt-6">
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Device
-            </button>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Create Device Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <form onSubmit={handleSubmitCreate(onCreateSubmit)}>
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      Add New Device
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => setShowCreateModal(false)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="h-6 w-6" />
-                    </button>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Device Name *
-                      </label>
-                      <input
-                        type="text"
-                        {...registerCreate("name")}
-                        placeholder="e.g., iPhone 14, Samsung Galaxy"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                      />
-                      {createErrors.name && (
-                        <p className="mt-1 text-sm text-red-600">
-                          {createErrors.name.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Description
-                      </label>
-                      <textarea
-                        {...registerCreate("description")}
-                        rows={3}
-                        placeholder="Optional description for this device"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                  <button
-                    type="submit"
-                    disabled={createDeviceMutation.isPending}
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
-                  >
-                    {createDeviceMutation.isPending ? (
-                      <>
-                        <RefreshCw className="animate-spin h-4 w-4 mr-2" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Device
-                      </>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {devicesLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="flex items-center space-x-2">
+              <RefreshCw className="animate-spin h-5 w-5 text-blue-600" />
+              <span className="text-gray-600">Loading devices...</span>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Update Device Modal */}
-      {showUpdateModal && selectedDevice && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <form onSubmit={handleSubmitUpdate(onUpdateSubmit)}>
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      Update Device
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowUpdateModal(false);
-                        setSelectedDevice(null);
-                      }}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="h-6 w-6" />
-                    </button>
+        ) : devices && devices.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {devices.map((device) => (
+              <div
+                key={device.id}
+                className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
+              >
+                {/* Device Header */}
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-2 h-2 rounded-full ${
+                        device.status === 'connected' ? 'bg-green-500' :
+                        device.status === 'connecting' ? 'bg-yellow-500' :
+                        'bg-red-500'
+                      }`}></div>
+                      <h3 className="text-sm font-semibold text-gray-900 truncate">
+                        {device.name}
+                      </h3>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        device.status === 'connected' ? 'bg-green-100 text-green-800' :
+                        device.status === 'connecting' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {device.status}
+                      </span>
+                    </div>
                   </div>
-                  <div className="space-y-4">
+                  {device.description && (
+                    <p className="mt-1 text-xs text-gray-500 truncate">
+                      {device.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* Device Stats */}
+                <div className="px-4 py-3 bg-gray-50">
+                  <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Device Name *
-                      </label>
-                      <input
-                        type="text"
-                        {...registerUpdate("name")}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                      />
-                      {updateErrors.name && (
-                        <p className="mt-1 text-sm text-red-600">
-                          {updateErrors.name.message}
-                        </p>
+                      <p className="text-gray-500">Messages Sent</p>
+                      <p className="font-semibold text-gray-900">{device.messagesSent}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Messages Received</p>
+                      <p className="font-semibold text-gray-900">{device.messagesReceived}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Device Actions */}
+                <div className="px-4 py-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-gray-500">
+                      {device.lastConnectedAt && (
+                        <span>Last seen: {new Date(device.lastConnectedAt).toLocaleDateString()}</span>
                       )}
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Description
-                      </label>
-                      <textarea
-                        {...registerUpdate("description")}
-                        rows={3}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                      />
+                    <div className="flex items-center space-x-2">
+                      {device.status === 'disconnected' && (
+                        <button
+                          onClick={() => handleReconnectDevice(device.id)}
+                          className="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors duration-200"
+                        >
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                          Reconnect
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteDevice(device.id)}
+                        className="inline-flex items-center px-2 py-1 border border-red-300 text-xs font-medium rounded text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-1 focus:ring-red-500 transition-colors duration-200"
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete
+                      </button>
                     </div>
                   </div>
                 </div>
-                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                  <button
-                    type="submit"
-                    disabled={updateDeviceMutation.isPending}
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
-                  >
-                    {updateDeviceMutation.isPending ? (
-                      <>
-                        <RefreshCw className="animate-spin h-4 w-4 mr-2" />
-                        Updating...
-                      </>
-                    ) : (
-                      "Update Device"
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowUpdateModal(false);
-                      setSelectedDevice(null);
-                    }}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="mx-auto h-12 w-12 text-gray-400">
+              <Smartphone className="h-12 w-12" />
+            </div>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No devices</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Get started by adding your first WhatsApp device.
+            </p>
+            <div className="mt-6">
+              <button
+                onClick={handleAddDevice}
+                disabled={generateQRForNewDeviceMutation.isPending}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors duration-200"
+              >
+                {generateQRForNewDeviceMutation.isPending ? (
+                  <>
+                    <RefreshCw className="animate-spin h-4 w-4 mr-2" />
+                    Generating QR...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Device
+                  </>
+                )}
+              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* QR Code Modal */}
+      {/* QR Modal */}
       <QRModal
         isOpen={showQRModal}
-        onClose={() => {
-          setShowQRModal(false);
-          setQrData(null);
-          setSelectedDevice(null);
-        }}
+        onClose={() => setShowQRModal(false)}
         qrData={qrData}
-        deviceName={selectedDevice?.name || ""}
-        deviceId={selectedDevice?.id || ""}
-        onRefresh={handleRefreshQR}
-        onStatusCheck={() => selectedDevice && handleCheckStatus(selectedDevice.id)}
-        isRefreshing={generateQRMutation.isPending}
+        deviceName={qrData?.deviceName || "WhatsApp Device"}
+        sessionId={sessionId || undefined}
+        onConnectionSuccess={handleConnectionSuccess}
       />
     </div>
   );
