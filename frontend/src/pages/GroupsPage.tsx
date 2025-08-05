@@ -1,22 +1,21 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  UserPlus,
-  Search,
-  RefreshCw,
-  Users,
-  MessageSquare,
-  Edit,
-  Trash2,
-  Plus,
-  X,
-  MoreVertical,
-  Calendar,
-  Settings,
-  UserMinus,
+    Calendar,
+    Edit,
+    MessageSquare,
+    MoreVertical,
+    Plus,
+    RefreshCw,
+    Search,
+    Trash2,
+    UserMinus,
+    UserPlus,
+    Users,
+    X
 } from 'lucide-react';
-import { groupsAPI } from '../lib/api';
+import React, { useState } from 'react';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { groupsAPI } from '../lib/api';
 
 const GroupsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');

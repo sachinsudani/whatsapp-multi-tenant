@@ -1,23 +1,20 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Send,
-  Search,
-  Filter,
-  RefreshCw,
-  MessageSquare,
-  Phone,
-  User,
-  Calendar,
-  CheckCircle,
-  AlertCircle,
-  Clock,
-  MoreVertical,
-  Paperclip,
-  Smile,
+    AlertCircle,
+    Calendar,
+    CheckCircle,
+    Clock,
+    MessageSquare,
+    MoreVertical,
+    Paperclip,
+    Phone,
+    RefreshCw,
+    Search,
+    Send
 } from 'lucide-react';
-import { whatsappAPI, contactsAPI } from '../lib/api';
+import React, { useState } from 'react';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { contactsAPI, whatsappAPI } from '../lib/api';
 
 const MessagesPage: React.FC = () => {
   const [selectedDevice, setSelectedDevice] = useState<string>('');

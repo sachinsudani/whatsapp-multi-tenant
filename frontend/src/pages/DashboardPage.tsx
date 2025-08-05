@@ -1,19 +1,18 @@
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  MessageSquare,
-  Smartphone,
-  Users,
-  UserPlus,
-  Send,
-  CheckCircle,
-  AlertCircle,
-  Clock,
-  TrendingUp,
-  Activity,
+    AlertCircle,
+    CheckCircle,
+    Clock,
+    MessageSquare,
+    Send,
+    Smartphone,
+    TrendingUp,
+    UserPlus,
+    Users
 } from 'lucide-react';
-import { whatsappAPI, contactsAPI, groupsAPI } from '../lib/api';
+import React from 'react';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { contactsAPI, groupsAPI, whatsappAPI } from '../lib/api';
 
 const DashboardPage: React.FC = () => {
   // Fetch dashboard data
