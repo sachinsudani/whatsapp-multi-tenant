@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import React, { useState } from 'react';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { contactsAPI, whatsappAPI } from '../lib/api';
+import { whatsappAPI } from '../lib/api';
 
 const MessagesPage: React.FC = () => {
   const [selectedDevice, setSelectedDevice] = useState<string>('');
@@ -33,11 +33,6 @@ const MessagesPage: React.FC = () => {
   const { data: devices, isLoading: devicesLoading } = useQuery({
     queryKey: ['devices'],
     queryFn: whatsappAPI.getDevices,
-  });
-
-  const { data: contacts, isLoading: contactsLoading } = useQuery({
-    queryKey: ['contacts'],
-    queryFn: contactsAPI.getContacts,
   });
 
   const { data: messages, isLoading: messagesLoading } = useQuery({
@@ -108,7 +103,7 @@ const MessagesPage: React.FC = () => {
     }
   };
 
-  if (devicesLoading || contactsLoading || messagesLoading) {
+  if (devicesLoading || messagesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner />

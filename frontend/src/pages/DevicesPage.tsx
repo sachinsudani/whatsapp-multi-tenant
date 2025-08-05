@@ -1,14 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    AlertCircle,
-    CheckCircle,
-    Clock,
     Plus,
-    QrCode,
     RefreshCw,
     Smartphone,
-    Trash2,
-    Wifi,
+    Trash2
 } from "lucide-react";
 import React, { useState } from "react";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -30,7 +25,6 @@ const DevicesPage: React.FC = () => {
   const {
     data: devices,
     isLoading: devicesLoading,
-    refetch: refetchDevices,
   } = useQuery({
     queryKey: ["devices"],
     queryFn: whatsappAPI.getDevices,
@@ -85,16 +79,8 @@ const DevicesPage: React.FC = () => {
     },
   });
 
-  // Get device status mutation
-  const getDeviceStatusMutation = useMutation({
-    mutationFn: whatsappAPI.getDeviceStatus,
-    onSuccess: () => {
-      refetchDevices();
-    },
-  });
-
   // Handle successful connection for new device
-  const handleConnectionSuccess = (deviceId: string) => {
+  const handleConnectionSuccess = () => {
     setShowQRModal(false);
     setQrData(null);
     setSessionId(null);
@@ -121,21 +107,6 @@ const DevicesPage: React.FC = () => {
     generateQRMutation.mutate(deviceId);
   };
 
-  const handleGenerateQR = (device: any) => {
-    generateQRMutation.mutate(device.id);
-  };
-
-  const handleCheckStatus = (deviceId: string) => {
-    getDeviceStatusMutation.mutate(deviceId);
-  };
-
-  const handleRefreshQR = () => {
-    if (isNewDeviceFlow) {
-      // For new device flow, regenerate QR
-      generateQRForNewDeviceMutation.mutate();
-    }
-  };
-
   const handleAddDevice = () => {
     console.log('=== ADD DEVICE BUTTON CLICKED ===');
     console.log('Add Device button clicked');
@@ -145,32 +116,6 @@ const DevicesPage: React.FC = () => {
     
     // Generate QR immediately without any form
     generateQRForNewDeviceMutation.mutate();
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "connected":
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case "connecting":
-        return <Clock className="h-5 w-5 text-yellow-500" />;
-      case "disconnected":
-        return <AlertCircle className="h-5 w-5 text-red-500" />;
-      default:
-        return <AlertCircle className="h-5 w-5 text-gray-500" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "connected":
-        return "text-green-600 bg-green-100";
-      case "connecting":
-        return "text-yellow-600 bg-yellow-100";
-      case "disconnected":
-        return "text-red-600 bg-red-100";
-      default:
-        return "text-gray-600 bg-gray-100";
-    }
   };
 
   if (devicesLoading) {
